@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Box, Button, Container, Flex, FormControl, FormLabel, Input, Select, Stack, Text, VStack, HStack, IconButton, Table, Thead, Tbody, Tr, Th, Td, useToast } from "@chakra-ui/react";
+import React, { useState, useRef } from "react";
+import { Box, Button, Container, Flex, FormControl, FormLabel, Input, Select, Stack, Text, VStack, HStack, IconButton, Table, Thead, Tbody, Tr, Th, Td, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter } from "@chakra-ui/react";
 import { FaEdit, FaTrash, FaFileExport, FaFileImport, FaPlus } from "react-icons/fa";
 
 // Mocked data for transactions
@@ -13,7 +13,7 @@ const initialTransactions = [
 const categories = ["Salary", "Groceries", "Bills", "Entertainment", "Other"];
 
 // Mocked data for budgets
-const budgets = {
+const initialBudgets = {
   Groceries: 300,
   Bills: 150,
   Entertainment: 100,
@@ -22,6 +22,12 @@ const budgets = {
 
 const Index = () => {
   const [transactions, setTransactions] = useState(initialTransactions);
+  const [budgets, setBudgets] = useState(initialBudgets);
+  const [editingBudget, setEditingBudget] = useState(null);
+  const [newBudgetValue, setNewBudgetValue] = useState("");
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const initialRef = useRef();
+  const finalRef = useRef();
   const toast = useToast();
 
   // State for form inputs
@@ -112,7 +118,29 @@ const Index = () => {
     });
   };
 
-  // View budget status
+  const openBudgetModal = (category) => {
+    setEditingBudget(category);
+    setNewBudgetValue(budgets[category].toString());
+    setIsBudgetModalOpen(true);
+  };
+
+  const closeBudgetModal = () => {
+    setIsBudgetModalOpen(false);
+  };
+
+  const handleBudgetChange = (e) => {
+    setNewBudgetValue(e.target.value);
+  };
+
+  const saveBudget = () => {
+    setBudgets((prevBudgets) => ({
+      ...prevBudgets,
+      [editingBudget]: parseFloat(newBudgetValue),
+    }));
+    closeBudgetModal();
+  };
+
+  // Add the updated getBudgetStatus function here
   const getBudgetStatus = () => {
     const status = {};
     Object.keys(budgets).forEach((category) => {
@@ -231,9 +259,11 @@ const Index = () => {
             Budget Status
           </Text>
           <VStack align="start">
-            {Object.entries(getBudgetStatus()).map(([category, { budget, spent }], index) => (
-              <HStack key={index}>
-                <Text>{category}:</Text>
+            {Object.entries(getBudgetStatus()).map(([category, { budget, spent }]) => (
+              <HStack key={category}>
+                <Text cursor="pointer" color="blue.500" onClick={() => openBudgetModal(category)}>
+                  {category}:
+                </Text>
                 <Text fontWeight="bold">
                   Spent: ${spent.toFixed(2)} / Budget: ${budget.toFixed(2)}
                 </Text>
@@ -242,6 +272,26 @@ const Index = () => {
           </VStack>
         </Box>
       </VStack>
+      <Modal isOpen={isBudgetModalOpen} onClose={closeBudgetModal} initialFocusRef={initialRef} finalFocusRef={finalRef}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Budget for {editingBudget}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <FormControl>
+              <FormLabel>Budget Amount</FormLabel>
+              <Input ref={initialRef} type="number" value={newBudgetValue} onChange={handleBudgetChange} placeholder="Enter new budget amount" />
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={saveBudget}>
+              Save
+            </Button>
+            <Button onClick={closeBudgetModal}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Container>
   );
 };
