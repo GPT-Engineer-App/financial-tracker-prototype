@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Box, Button, Container, Flex, FormControl, FormLabel, Input, Select, Stack, Text, VStack, HStack, IconButton, Table, Thead, Tbody, Tr, Th, Td, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter } from "@chakra-ui/react";
+import { Box, Button, Container, Flex, FormControl, FormLabel, Input, Select, Stack, Text, VStack, HStack, IconButton, Table, Thead, Tbody, Tr, Th, Td, Textarea, useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter } from "@chakra-ui/react";
 import { FaEdit, FaTrash, FaFileExport, FaFileImport, FaPlus } from "react-icons/fa";
 
 // Mocked data for transactions
@@ -108,15 +108,27 @@ const Index = () => {
   };
 
   // Mock function for import transactions - would be replaced with actual file import functionality
-  const importTransactions = () => {
-    toast({
-      title: "Import Transactions",
-      description: "This is a mock function. The actual import functionality would be implemented here.",
-      status: "info",
-      duration: 3000,
-      isClosable: true,
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [csvInput, setCsvInput] = useState("");
+
+  const parseCSV = (csv) => {
+    const lines = csv.split("\n");
+    return lines.map((line) => {
+      const [date, amount, type, category] = line.split(",");
+      return { id: transactions.length + 1, date, amount: parseFloat(amount), type, category };
     });
   };
+
+  const handleImportTransactions = () => {
+    const newTransactions = parseCSV(csvInput);
+    setTransactions([...transactions, ...newTransactions]);
+    setCsvInput("");
+    setIsImportModalOpen(false);
+  };
+
+  const openImportModal = () => setIsImportModalOpen(true);
+  const closeImportModal = () => setIsImportModalOpen(false);
+  const handleCsvInput = (e) => setCsvInput(e.target.value);
 
   const openBudgetModal = (category) => {
     setEditingBudget(category);
@@ -229,9 +241,28 @@ const Index = () => {
           <Button leftIcon={<FaFileExport />} colorScheme="blue" onClick={exportTransactions}>
             Export Transactions
           </Button>
-          <Button leftIcon={<FaFileImport />} colorScheme="orange" onClick={importTransactions}>
+          <Button leftIcon={<FaFileImport />} colorScheme="orange" onClick={openImportModal}>
             Import Transactions
           </Button>
+          <Modal isOpen={isImportModalOpen} onClose={closeImportModal}>
+            <ModalOverlay />
+            <ModalContent>
+              <ModalHeader>Import Transactions</ModalHeader>
+              <ModalCloseButton />
+              <ModalBody pb={6}>
+                <FormControl>
+                  <FormLabel>Paste CSV data</FormLabel>
+                  <Textarea placeholder="Enter CSV data" value={csvInput} onChange={handleCsvInput} />
+                </FormControl>
+              </ModalBody>
+              <ModalFooter>
+                <Button colorScheme="blue" mr={3} onClick={handleImportTransactions}>
+                  Import
+                </Button>
+                <Button onClick={closeImportModal}>Cancel</Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
         </Flex>
 
         <Box w="100%">
